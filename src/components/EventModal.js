@@ -17,6 +17,22 @@ export default function EventModal(){
   const [endTime, setEndTime] = useState(selectedEvent? selectedEvent.end : "08:00");
 
   const [ totalTime, setTotalTime] = useState(selectedEvent? selectedEvent.timeSpent : 0);
+
+  const [mail, setMail] = useState(selectedEvent? selectedEvent.mail : "" );
+  const compare = ()=>{
+
+    const date1 = new Date(daySelected.format('YYYY'), daySelected.format('MM')-1, daySelected.format('DD'), startTime.split(':')[0], startTime.split(':')[1]); //starttime of event
+    const date2 = new Date(); //current time
+
+    return (date1-date2)/1000/60;
+  }
+  const [disable, setDisable] = useState(compare()<=0 ? true : false);
+  useEffect(()=>{
+    if(compare()<=0) setDisable(true);
+    else setDisable(false);
+  }, [startTime]);
+  
+
   useEffect(()=>{
     const startTimeHrs = parseInt(startTime.split(":")[0]);
     const startTimeMins = parseInt(startTime.split(":")[1]);
@@ -24,6 +40,29 @@ export default function EventModal(){
     const endTimeMins = parseInt(endTime.split(":")[1]);
     setTotalTime( (endTimeHrs - startTimeHrs)*60 + (endTimeMins-startTimeMins) );
   }, [startTime, endTime]);
+
+  const scheduleEmail = async () => {
+    const response = await fetch('http://localhost:3001/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        recipient: mail,
+        title: title,
+        description: description,
+        date: daySelected.format("YYYY-MM-DD"),
+        time: startTime,
+      }),
+    });
+  
+    if (response.ok) {
+      alert("Scheduled successfully");
+    } else {
+      alert("an error occured in scheduling mail");
+    }
+  };
+  
 
   function handleSubmit(e){
     e.preventDefault();
@@ -36,6 +75,7 @@ export default function EventModal(){
       end: endTime,
       timeSpent: totalTime,
       id: selectedEvent? selectedEvent.id : Date.now(),
+      mail: mail,
     };
     if(selectedEvent){
       dispatchCalEvent({type: "update", payload: calendarEvent});
@@ -44,6 +84,10 @@ export default function EventModal(){
       dispatchCalEvent({type: "push", payload: calendarEvent});
     }
     setShowEventModal(false);
+
+    if(mail.length>0 && !disable){
+      scheduleEmail();
+    }
   }
 
   return(
@@ -110,6 +154,22 @@ export default function EventModal(){
                 </span>
               ))}
             </div>
+            <span className="material-icons-outlined text-gray-400 pb-1">
+              {mail==="" ? "alarm_off" : "alarm"}
+            </span>
+            <input type="text" name="description" placeholder={disable? "event has already happened":"provide your gmail"} value={disable? "event has already happened":mail} onChange={(e)=>setMail(e.target.value)}
+            className="pt-3 border-0 text-gray-600 pb-2 w-full border-b-2 border-gray-200 focus:ouline-none focus:ring-0 focus:border-blue-500"
+            disabled={disable}
+            />
+            {/* { mail.length>0 && 
+              <div></div>
+            } 
+            { mail.length>0 && 
+              <div>
+                <input className={` bg-${selectedLabel}-300 p-1 `} type='button' disabled={disable}>Before 1 hour</input>
+                <input className={` bg-${selectedLabel}-300 p-1`} type='button' disabled={disable}>At the time of event</input>
+              </div>
+            }  */}
           </div>
         </div>
         <footer className="flex justify-end border-t p-3 mt-5" >
