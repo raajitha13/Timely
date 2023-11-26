@@ -1,5 +1,7 @@
 # Timely
 
+An event-creation app with basic features and Gmail notification system. It also visualizes the time spent on daily events in the current week.
+
 ## Technologies Used
 
 - HTML, CSS, JavaScript
